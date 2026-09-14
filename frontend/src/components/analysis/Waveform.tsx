@@ -1,14 +1,19 @@
 import { useEffect, useRef } from "react"
+import { useThemeStore } from "@/store/theme"
 
-interface WaveformProps {
+export function Waveform({
+  data,
+  progress,
+  onSeek,
+  className,
+}: {
   data: number[]
-  progress: number // 0-1, playhead position
+  progress: number
   onSeek?: (progress: number) => void
   className?: string
-}
-
-export function Waveform({ data, progress, onSeek, className }: WaveformProps) {
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const theme = useThemeStore((s) => s.theme)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -16,14 +21,18 @@ export function Waveform({ data, progress, onSeek, className }: WaveformProps) {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    const styles = getComputedStyle(document.documentElement)
+    const played = styles.getPropertyValue("--c-accent").trim()
+    const pending = styles.getPropertyValue("--c-hairline").trim()
+
     const parent = canvas.parentElement
     const width = parent?.clientWidth ?? 600
-    const height = 96
+    const height = 92
     canvas.width = width * devicePixelRatio
     canvas.height = height * devicePixelRatio
     canvas.style.width = `${width}px`
     canvas.style.height = `${height}px`
-    ctx.scale(devicePixelRatio, devicePixelRatio)
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
     ctx.clearRect(0, 0, width, height)
 
     const barCount = Math.min(data.length, Math.floor(width / 3))
@@ -34,12 +43,11 @@ export function Waveform({ data, progress, onSeek, className }: WaveformProps) {
 
     for (let i = 0; i < barCount; i++) {
       const amp = data[Math.floor(i * step)] ?? 0
-      const barHeight = Math.max(2, amp * (height - 8))
-      const x = i * barWidth
-      ctx.fillStyle = i < playhead ? "#22d3ee" : "rgba(148,163,184,0.35)"
-      ctx.fillRect(x, mid - barHeight / 2, Math.max(1, barWidth - 1), barHeight)
+      const barHeight = Math.max(2, amp * (height - 10))
+      ctx.fillStyle = i < playhead ? played : pending
+      ctx.fillRect(i * barWidth, mid - barHeight / 2, Math.max(1, barWidth - 1), barHeight)
     }
-  }, [data, progress])
+  }, [data, progress, theme])
 
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     if (!onSeek) return

@@ -17,7 +17,6 @@ _TTL_SECONDS = 10 * 60
 
 @dataclass
 class PendingUpload:
-    user_id: int
     filename: str
     raw_bytes: bytes
     created_at: float
@@ -28,16 +27,15 @@ _store: dict[str, PendingUpload] = {}
 
 def _sweep_expired() -> None:
     now = time.monotonic()
-    expired = [k for k, v in _store.items() if now - v.created_at > _TTL_SECONDS]
-    for k in expired:
-        _store.pop(k, None)
+    for key in [k for k, v in _store.items() if now - v.created_at > _TTL_SECONDS]:
+        _store.pop(key, None)
 
 
-def create(user_id: int, filename: str, raw_bytes: bytes) -> str:
+def create(filename: str, raw_bytes: bytes) -> str:
     _sweep_expired()
     analysis_id = uuid.uuid4().hex
     _store[analysis_id] = PendingUpload(
-        user_id=user_id, filename=filename, raw_bytes=raw_bytes, created_at=time.monotonic()
+        filename=filename, raw_bytes=raw_bytes, created_at=time.monotonic()
     )
     return analysis_id
 

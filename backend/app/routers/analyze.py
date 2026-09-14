@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, HTTPException, Request, UploadFile, status
 
-from app.core.deps import get_current_user
 from app.core.rate_limit import enforce_rate_limit
-from app.models.db import User
 from app.models.schemas import PendingUploadResponse
 from app.services import pending_store
 
@@ -13,8 +11,9 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
 
 
 @router.post("/upload", response_model=PendingUploadResponse)
-async def upload(file: UploadFile, current_user: User = Depends(get_current_user)):
-    enforce_rate_limit(f"user:{current_user.id}")
+async def upload(file: UploadFile, request: Request):
+    # No accounts, so abuse protection keys on the client address instead.
+    enforce_rate_limit(f"ip:{request.client.host if request.client else 'unknown'}")
 
     filename = file.filename or "upload.wav"
     if not filename.lower().endswith(ALLOWED_SUFFIXES):
@@ -29,5 +28,5 @@ async def upload(file: UploadFile, current_user: User = Depends(get_current_user
     if len(raw_bytes) > MAX_UPLOAD_BYTES:
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File exceeds the 25 MB demo limit.")
 
-    analysis_id = pending_store.create(user_id=current_user.id, filename=filename, raw_bytes=raw_bytes)
+    analysis_id = pending_store.create(filename=filename, raw_bytes=raw_bytes)
     return PendingUploadResponse(analysis_id=analysis_id, filename=filename)

@@ -1,7 +1,6 @@
 import type { FeatureContribution } from "@/lib/ws"
-import { cn } from "@/lib/utils"
 
-const FEATURE_LABELS: Record<string, string> = {
+const LABELS: Record<string, string> = {
   f0_jitter_pct: "Pitch jitter",
   shimmer_pct: "Amplitude shimmer",
   mfcc_delta_var: "Timbre dynamics",
@@ -13,25 +12,25 @@ const FEATURE_LABELS: Record<string, string> = {
 
 export function FeatureBreakdown({ contributions }: { contributions: FeatureContribution[] }) {
   return (
-    <div className="space-y-3">
+    <div className="divide-y divide-hairline">
       {contributions.map((c) => {
         const pct = Math.round(c.suspicion * 100)
         return (
-          <div key={c.feature}>
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="font-medium text-gray-200">{FEATURE_LABELS[c.feature] ?? c.feature}</span>
-              <span className={cn("tabular-nums", pct >= 60 ? "text-rose-400" : "text-gray-500")}>{pct}%</span>
+          <div key={c.feature} className="py-3 first:pt-0 last:pb-0">
+            <div className="mb-1.5 flex items-baseline justify-between gap-3 text-[12px]">
+              <span className="font-medium text-ink">{LABELS[c.feature] ?? c.feature}</span>
+              <span className="tabular-nums text-muted">{pct}%</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-raised">
               <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-700",
-                  pct >= 60 ? "bg-gradient-to-r from-rose-500 to-amber-400" : "bg-gradient-to-r from-cyan-500 to-blue-500"
-                )}
-                style={{ width: `${pct}%` }}
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${pct}%`,
+                  backgroundColor: pct >= 60 ? "var(--c-caution)" : "var(--c-accent)",
+                }}
               />
             </div>
-            <p className="mt-1 text-[11px] leading-snug text-gray-500">{c.explanation}</p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{c.explanation}</p>
           </div>
         )
       })}

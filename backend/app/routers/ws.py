@@ -17,7 +17,6 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlmodel import Session
 
 from app.core.config import settings
-from app.core.deps import get_user_from_token
 from app.models.db import AnalysisRecord, get_session
 from app.services import audio_io, pending_store, trained_detector
 from app.services.feature_extraction import extract_clip_features
@@ -30,15 +29,8 @@ router = APIRouter(tags=["analyze-stream"])
 async def ws_analyze(websocket: WebSocket, analysis_id: str, session: Session = Depends(get_session)):
     await websocket.accept()
 
-    token = websocket.query_params.get("token")
-    user = get_user_from_token(session, token) if token else None
-    if user is None:
-        await websocket.send_json({"type": "error", "message": "Not authenticated."})
-        await websocket.close(code=4401)
-        return
-
     pending = pending_store.get(analysis_id)
-    if pending is None or pending.user_id != user.id:
+    if pending is None:
         await websocket.send_json(
             {"type": "error", "message": "Upload not found or expired — please upload the file again."}
         )
@@ -112,7 +104,6 @@ async def ws_analyze(websocket: WebSocket, analysis_id: str, session: Session = 
         ]
 
         record = AnalysisRecord(
-            user_id=user.id,
             filename=pending.filename,
             duration_seconds=clip.duration_seconds,
             risk_score=risk_score,

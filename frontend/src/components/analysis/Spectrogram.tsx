@@ -1,34 +1,22 @@
 import { useEffect, useRef } from "react"
+import { useThemeStore } from "@/store/theme"
 
-interface SpectrogramProps {
-  data: number[][] // [freqBin][timeBin], values 0..1, freq index 0 = lowest frequency
+/**
+ * Single-hue tonal ramp rather than the usual rainbow colour map — the brief
+ * rules out rainbow colouring. Intensity reads as density from canvas tone up
+ * to the accent, which keeps it legible in both themes.
+ */
+export function Spectrogram({
+  data,
+  progress,
+  className,
+}: {
+  data: number[][]
   progress?: number
   className?: string
-}
-
-const STOPS: [number, number, number, number][] = [
-  [0.0, 5, 8, 20],
-  [0.3, 20, 40, 90],
-  [0.55, 34, 140, 190],
-  [0.75, 34, 211, 238],
-  [0.9, 167, 139, 250],
-  [1.0, 251, 207, 232],
-]
-
-function colorAt(t: number): [number, number, number] {
-  for (let i = 0; i < STOPS.length - 1; i++) {
-    const [t0, r0, g0, b0] = STOPS[i]
-    const [t1, r1, g1, b1] = STOPS[i + 1]
-    if (t >= t0 && t <= t1) {
-      const f = (t - t0) / (t1 - t0 || 1)
-      return [r0 + (r1 - r0) * f, g0 + (g1 - g0) * f, b0 + (b1 - b0) * f]
-    }
-  }
-  return [251, 207, 232]
-}
-
-export function Spectrogram({ data, progress, className }: SpectrogramProps) {
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const theme = useThemeStore((s) => s.theme)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -40,26 +28,47 @@ export function Spectrogram({ data, progress, className }: SpectrogramProps) {
     const timeBins = data[0]?.length ?? 0
     if (timeBins === 0) return
 
-    // Render at native resolution to an offscreen buffer, then upscale.
+    const styles = getComputedStyle(document.documentElement)
+    const toRgb = (v: string): [number, number, number] => {
+      const h = v.trim().replace("#", "")
+      const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h
+      const n = parseInt(full, 16)
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    }
+    const low = toRgb(styles.getPropertyValue("--c-canvas"))
+    const mid = toRgb(styles.getPropertyValue("--c-accent"))
+    const high = toRgb(styles.getPropertyValue("--c-ink"))
+
     const off = document.createElement("canvas")
     off.width = timeBins
     off.height = freqBins
     const offCtx = off.getContext("2d")!
-    const imgData = offCtx.createImageData(timeBins, freqBins)
+    const img = offCtx.createImageData(timeBins, freqBins)
 
     for (let f = 0; f < freqBins; f++) {
-      const rowFromTop = freqBins - 1 - f // low freq at bottom
+      const rowFromTop = freqBins - 1 - f
       for (let t = 0; t < timeBins; t++) {
         const v = Math.max(0, Math.min(1, data[f][t]))
-        const [r, g, b] = colorAt(v)
+        let r: number, g: number, b: number
+        if (v < 0.6) {
+          const k = v / 0.6
+          r = low[0] + (mid[0] - low[0]) * k
+          g = low[1] + (mid[1] - low[1]) * k
+          b = low[2] + (mid[2] - low[2]) * k
+        } else {
+          const k = (v - 0.6) / 0.4
+          r = mid[0] + (high[0] - mid[0]) * k
+          g = mid[1] + (high[1] - mid[1]) * k
+          b = mid[2] + (high[2] - mid[2]) * k
+        }
         const idx = (rowFromTop * timeBins + t) * 4
-        imgData.data[idx] = r
-        imgData.data[idx + 1] = g
-        imgData.data[idx + 2] = b
-        imgData.data[idx + 3] = 255
+        img.data[idx] = r
+        img.data[idx + 1] = g
+        img.data[idx + 2] = b
+        img.data[idx + 3] = 255
       }
     }
-    offCtx.putImageData(imgData, 0, 0)
+    offCtx.putImageData(img, 0, 0)
 
     const parent = canvas.parentElement
     const width = parent?.clientWidth ?? 600
@@ -68,24 +77,23 @@ export function Spectrogram({ data, progress, className }: SpectrogramProps) {
     canvas.height = height
     canvas.style.width = `${width}px`
     canvas.style.height = `${height}px`
-    ctx.imageSmoothingEnabled = true
     ctx.clearRect(0, 0, width, height)
     ctx.drawImage(off, 0, 0, timeBins, freqBins, 0, 0, width, height)
 
     if (progress !== undefined) {
-      ctx.strokeStyle = "rgba(255,255,255,0.85)"
-      ctx.lineWidth = 1.5
+      ctx.strokeStyle = styles.getPropertyValue("--c-ink").trim()
+      ctx.lineWidth = 1
       const x = progress * width
       ctx.beginPath()
       ctx.moveTo(x, 0)
       ctx.lineTo(x, height)
       ctx.stroke()
     }
-  }, [data, progress])
+  }, [data, progress, theme])
 
   return (
     <div className={className}>
-      <canvas ref={canvasRef} className="w-full rounded-lg" />
+      <canvas ref={canvasRef} className="w-full rounded border border-hairline" />
     </div>
   )
 }

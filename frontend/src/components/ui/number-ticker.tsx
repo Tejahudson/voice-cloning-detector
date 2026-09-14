@@ -1,25 +1,29 @@
 import { useEffect, useRef, useState } from "react"
 import { animate } from "framer-motion"
 
-interface NumberTickerProps {
+export function NumberTicker({
+  value,
+  decimals = 0,
+  className,
+  suffix = "",
+  duration = 0.9,
+}: {
   value: number
   decimals?: number
   className?: string
   suffix?: string
   duration?: number
-}
-
-export function NumberTicker({ value, decimals = 0, className, suffix = "", duration = 0.8 }: NumberTickerProps) {
+}) {
   const [display, setDisplay] = useState(0)
-  const prevValue = useRef(0)
+  const prev = useRef(0)
 
   useEffect(() => {
-    const controls = animate(prevValue.current, value, {
+    const controls = animate(prev.current, value, {
       duration,
-      ease: "easeOut",
+      ease: [0.16, 1, 0.3, 1],
       onUpdate: (v) => setDisplay(v),
     })
-    prevValue.current = value
+    prev.current = value
     return () => controls.stop()
   }, [value, duration])
 

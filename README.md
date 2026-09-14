@@ -84,7 +84,7 @@ graph TD
 
 | Layer | Stack |
 |---|---|
-| Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, Magic UI-style components, Framer Motion, Recharts, Zustand |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, Radix primitives, Framer Motion, Recharts, Zustand, driver.js, assistant-ui |
 | Backend | Python 3.13, FastAPI, Uvicorn, WebSockets, SQLModel + SQLite |
 | Audio / ML | PyTorch (CPU), Transformers, librosa, NumPy, SciPy, soundfile |
 | Security | JWT (python-jose), bcrypt (passlib), in-memory rate limiting |
@@ -114,6 +114,25 @@ npm run dev
 ```
 
 Open **http://localhost:5173**. The dev server proxies `/api` and `/ws` to port 8000, so no CORS setup is needed.
+
+To deploy the frontend separately from the backend, build with the API origin baked in:
+
+```bash
+VITE_API_BASE_URL=https://your-backend.example.com npm run build
+```
+
+Leave it unset when a reverse proxy serves both from the same origin.
+
+## Interface
+
+The UI is a corporate-minimal design system: Helvetica throughout, a warm off-white light theme and a neutral charcoal dark theme (toggle in the header, remembered per browser and defaulting to your OS preference). Depth comes from hairline borders, tonal surface steps and real CSS 3D perspective — no shadows, glass or gradients.
+
+- **Looping logo animation** — the shield mark rotates a full turn on the Y axis while the wordmark re-reveals letter by letter, in phase.
+- **3D voiceprint hero** — concentric rings of bars projected with a rotation matrix and perspective divide on a plain 2D canvas, steered gently by the cursor. No WebGL dependency.
+- **Guided tour** — driver.js walkthrough of the analysis flow, restyled to the palette.
+- **Ask the analyst** — assistant-ui Thread/Composer primitives on a custom local runtime that answers from the real analysis payload. Deterministic, no LLM call, no API key.
+
+All motion respects `prefers-reduced-motion`.
 
 ## How detection works
 

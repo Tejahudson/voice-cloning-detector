@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.models.db import init_db
-from app.routers import analyze, auth, history, ws
+from app.routers import analyze, history, ws
 from app.services import trained_detector
 
 logging.basicConfig(level=logging.INFO)
@@ -43,7 +43,6 @@ def health():
     }
 
 
-app.include_router(auth.router)
 app.include_router(analyze.router)
 app.include_router(history.router)
 app.include_router(ws.router)

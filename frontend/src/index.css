@@ -1,52 +1,59 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-  --color-bg: #05070d;
-  --color-bg-elevated: #0b0f1a;
-  --color-panel: #10152447;
-  --color-border: #232a3d;
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-raised);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-hairline: var(--c-hairline);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-authentic: var(--c-authentic);
+  --color-cloned: var(--c-cloned);
+  --color-caution: var(--c-caution);
+}
 
-  --color-brand-cyan: #22d3ee;
-  --color-brand-violet: #a78bfa;
-  --color-brand-blue: #3b82f6;
+/* Light — warm off-white, never pure white */
+:root {
+  --c-canvas: #f4f3f0;
+  --c-surface: #edebe7;
+  --c-raised: #e6e3de;
+  --c-ink: #1a1a18;
+  --c-muted: #6b6a66;
+  --c-faint: #93918c;
+  --c-hairline: #dad7d1;
+  --c-accent: #3d5a80;
+  --c-accent-ink: #f4f3f0;
+  --c-authentic: #4a7c59;
+  --c-cloned: #a4453a;
+  --c-caution: #8a6d3b;
+}
 
-  --color-risk-safe: #34d399;
-  --color-risk-mid: #fbbf24;
-  --color-risk-danger: #fb7185;
+/* Dark — neutral charcoal, not black, no purple cast */
+:root[data-theme="dark"] {
+  --c-canvas: #17181a;
+  --c-surface: #1f2022;
+  --c-raised: #27282b;
+  --c-ink: #e8e7e4;
+  --c-muted: #9a9894;
+  --c-faint: #76746f;
+  --c-hairline: #2e2f32;
+  --c-accent: #5b7fa6;
+  --c-accent-ink: #121315;
+  --c-authentic: #6b9e78;
+  --c-cloned: #c4645a;
+  --c-caution: #b08c52;
+}
 
-  --animate-marquee: marquee 28s linear infinite;
-  --animate-shimmer: shimmer 2.2s linear infinite;
-  --animate-pulse-glow: pulse-glow 2.4s ease-in-out infinite;
-
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
-  @keyframes shimmer {
-    from {
-      background-position: 0% 0%;
-    }
-    to {
-      background-position: -200% 0%;
-    }
-  }
-  @keyframes pulse-glow {
-    0%,
-    100% {
-      opacity: 0.55;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.04);
-    }
-  }
+html {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 html,
@@ -56,24 +63,195 @@ body,
 }
 
 body {
-  background: var(--color-bg);
-  color: #e5e7eb;
-  font-family: var(--font-sans);
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.35);
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
 }
+
+/* ---- 3D primitives ---------------------------------------------------- */
+
+.scene {
+  perspective: 1000px;
+}
+
+.tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.press {
+  transition: transform 0.12s ease;
+  transform-style: preserve-3d;
+}
+.press:active {
+  transform: translateZ(-6px) scale(0.985);
+}
+
+/* ---- Looping logo animation ------------------------------------------ */
+
+@keyframes mark-spin {
+  0% {
+    transform: rotateY(0deg);
+  }
+  55% {
+    transform: rotateY(360deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+@keyframes letter-in {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translateY(0.24em);
+  }
+  22%,
+  88% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ring-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes bar-idle {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.animate-mark-spin {
+  animation: mark-spin 7s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  transform-style: preserve-3d;
+}
+.animate-ring-pulse {
+  animation: ring-pulse 3.2s ease-in-out infinite;
+}
+.animate-sweep {
+  animation: sweep 1.6s ease-in-out infinite;
+}
+
+/* ---- Scrollbar -------------------------------------------------------- */
 
 .scrollbar-thin::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #232a3d;
+  background: var(--c-hairline);
   border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ---- driver.js tour, restyled to the palette ------------------------- */
+
+.driver-popover.vg-tour {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  border: 1px solid var(--c-hairline);
+  border-radius: 10px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  box-shadow: none;
+  max-width: 320px;
+}
+.driver-popover.vg-tour .driver-popover-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.driver-popover.vg-tour .driver-popover-description {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--c-muted);
+}
+.driver-popover.vg-tour .driver-popover-progress-text {
+  font-size: 11px;
+  color: var(--c-faint);
+}
+.driver-popover.vg-tour .driver-popover-navigation-btns button {
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  text-shadow: none;
+}
+.driver-popover.vg-tour .driver-popover-navigation-btns button:hover {
+  filter: brightness(1.08);
+}
+.driver-popover.vg-tour .driver-popover-close-btn {
+  color: var(--c-faint);
+}
+.driver-popover.vg-tour .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: var(--c-surface);
+}
+.driver-popover.vg-tour .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: var(--c-surface);
+}
+.driver-popover.vg-tour .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: var(--c-surface);
+}
+.driver-popover.vg-tour .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: var(--c-surface);
+}
+
+/* ---- Reduced motion --------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

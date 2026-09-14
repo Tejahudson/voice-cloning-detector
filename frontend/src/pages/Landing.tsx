@@ -1,162 +1,214 @@
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
-import {
-  ActivitySquare,
-  AudioLines,
-  Fingerprint,
-  Gauge,
-  Lock,
-  Radar,
-  ShieldCheck,
-  Sparkles,
-  Waves,
-} from "lucide-react"
-import { Particles } from "@/components/magicui/particles"
-import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text"
-import { ShimmerButton } from "@/components/magicui/shimmer-button"
-import { MagicCard } from "@/components/magicui/magic-card"
-import { Marquee } from "@/components/magicui/marquee"
+import { IconChevronRight, IconChip, IconMic, IconWaveform } from "@/components/icons"
+import { VoiceprintRing } from "@/components/landing/VoiceprintRing"
+import { TiltCard } from "@/components/ui/card"
 
-const FEATURES = [
+const STAGES = [
   {
-    icon: Waves,
-    title: "Multi-layer voice forensics",
-    desc: "Pitch jitter, amplitude shimmer, harmonics-to-noise ratio, spectral flux, and formant stability — computed directly from the waveform.",
+    n: "01",
+    title: "Capture",
+    body: "Upload a recording or record straight from your microphone. Audio is normalised to 16 kHz mono in the browser before it ever leaves the page.",
   },
   {
-    icon: Gauge,
-    title: "Live risk scoring",
-    desc: "A 0–100 risk score streams in roughly once a second while the clip plays, mirroring how the system would score a live call.",
+    n: "02",
+    title: "Analyse",
+    body: "A Wav2Vec2 classifier trained on human speech and synthetic clones scores the clip in overlapping windows, streaming a result roughly once a second.",
   },
   {
-    icon: Fingerprint,
-    title: "Explainable verdicts",
-    desc: "Every verdict ships with a ranked breakdown of exactly which acoustic features drove the score — no black box.",
-  },
-  {
-    icon: Lock,
-    title: "Privacy-preserving",
-    desc: "Uploaded audio is analyzed in memory and discarded — never written to disk. Only the verdict summary is saved to your history.",
+    n: "03",
+    title: "Explain",
+    body: "Alongside the verdict you get the signal-level forensics — pitch jitter, shimmer, harmonics-to-noise ratio — so the decision is inspectable, not opaque.",
   },
 ]
 
-const BADGES = [
-  "ASVspoof-inspired features",
-  "HTTPS / WSS transport",
-  "JWT-gated dashboard",
-  "Audio never persisted",
-  "Rate-limited API",
-  "Explainable scoring",
+const FACTS = [
+  { value: "₹22,000 Cr", label: "lost annually in India to telephonic cyber-fraud" },
+  { value: "3 seconds", label: "of reference audio is enough to clone a voice" },
+  { value: "2 layers", label: "trained model for the verdict, forensics for the reasoning" },
 ]
+
+const fade = {
+  initial: { opacity: 0, y: 16 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
+}
 
 export default function Landing() {
   return (
-    <div className="relative overflow-hidden">
+    <div>
       {/* Hero */}
-      <section className="relative border-b border-white/5">
-        <div className="relative mx-auto flex min-h-[560px] max-w-6xl flex-col items-center justify-center px-6 py-24 text-center">
-          <Particles className="absolute inset-0 -z-10" quantity={70} />
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(34,211,238,0.12),transparent)]" />
+      <section className="border-b border-hairline">
+        <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
+          <div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="mb-5 text-[11px] font-medium uppercase tracking-[0.16em] text-faint"
+            >
+              Voice integrity for calls that matter
+            </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-5 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs text-gray-300"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-            SIH26104 · AI-Powered Real-Time Voice Cloning Detection
-          </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="text-4xl leading-[1.08] font-semibold text-ink sm:text-5xl"
+            >
+              Is It All AI You're
+              <br />
+              Listening To?
+            </motion.h1>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.05 }}
-            className="max-w-3xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl"
-          >
-            Is that really them calling?{" "}
-            <AnimatedGradientText>Find out before you approve anything.</AnimatedGradientText>
-          </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-5 max-w-lg text-[15px] leading-relaxed text-muted"
+            >
+              A cloned voice needs only a few seconds of source audio, and caller ID cannot tell you
+              the difference. VoiceGuard-AI analyses the waveform itself and tells you what you are
+              actually listening to — with the evidence to back it up.
+            </motion.p>
 
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mt-5 max-w-xl text-sm text-gray-400 sm:text-base"
-          >
-            Upload any real or AI-cloned voice recording and watch VoiceGuard-AI break it down live — waveform,
-            spectrogram, pitch contour, and an explainable risk score — powered by genuine signal-processing
-            forensics, not a fake demo.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-3"
-          >
-            <Link to="/signup">
-              <ShimmerButton>
-                <AudioLines className="h-4 w-4" />
-                Analyze a voice sample
-              </ShimmerButton>
-            </Link>
-            <Link to="/login">
-              <ShimmerButton variant="ghost">I already have an account</ShimmerButton>
-            </Link>
-          </motion.div>
-        </div>
-
-        <div className="border-t border-white/5 bg-white/[0.015] py-4">
-          <Marquee>
-            {BADGES.map((b) => (
-              <span
-                key={b}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-1 text-xs text-gray-400"
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-8 flex flex-wrap items-center gap-3"
+            >
+              <Link
+                to="/analyze"
+                className="press inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-medium text-[var(--c-accent-ink)] transition hover:brightness-110"
               >
-                <ShieldCheck className="h-3 w-3 text-cyan-400" />
-                {b}
-              </span>
-            ))}
-          </Marquee>
+                Analyse a recording
+                <IconChevronRight className="text-sm" />
+              </Link>
+              <Link
+                to="/history"
+                className="press inline-flex items-center gap-2 rounded-md border border-hairline px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface"
+              >
+                View past results
+              </Link>
+            </motion.div>
+          </div>
+
+          <div className="relative h-[320px] sm:h-[400px]">
+            <VoiceprintRing className="h-full w-full" />
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <div className="mb-10 text-center">
-          <h2 className="text-2xl font-semibold text-white">How the detection engine works</h2>
-          <p className="mt-2 text-sm text-gray-500">
-            A feature-based heuristic scorer — explainable today, built to slot in a trained AASIST/RawNet2 model
-            tomorrow.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <MagicCard key={title} className="p-5">
-              <Icon className="h-5 w-5 text-cyan-400" />
-              <h3 className="mt-3 text-sm font-semibold text-white">{title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{desc}</p>
-            </MagicCard>
+      {/* Facts */}
+      <section className="border-b border-hairline bg-surface">
+        <div className="mx-auto grid max-w-5xl gap-8 px-6 py-12 sm:grid-cols-3">
+          {FACTS.map((f, i) => (
+            <motion.div key={f.value} {...fade} transition={{ ...fade.transition, delay: i * 0.08 }}>
+              <p className="text-2xl font-semibold tracking-tight text-ink">{f.value}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{f.label}</p>
+            </motion.div>
           ))}
         </div>
       </section>
 
-      {/* CTA strip */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent p-10 text-center">
-          <Radar className="mx-auto mb-4 h-7 w-7 text-violet-400" />
-          <h3 className="text-xl font-semibold text-white">Bring your own real and cloned clips</h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
-            Try it with several samples of each — a real recording, a TTS/voice-clone output — and compare how the
-            risk score separates them.
+      {/* How it works */}
+      <section className="mx-auto max-w-5xl px-6 py-20">
+        <motion.div {...fade} className="mb-10 max-w-xl">
+          <h2 className="text-2xl font-semibold text-ink">How the detection works</h2>
+          <p className="mt-2.5 text-[14px] leading-relaxed text-muted">
+            Three stages, each one inspectable. Nothing about the verdict is hidden behind a score.
           </p>
-          <Link to="/signup" className="mt-6 inline-block">
-            <ShimmerButton>
-              <ActivitySquare className="h-4 w-4" />
-              Get started
-            </ShimmerButton>
-          </Link>
+        </motion.div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {STAGES.map((s, i) => (
+            <motion.div key={s.n} {...fade} transition={{ ...fade.transition, delay: i * 0.09 }}>
+              <TiltCard className="h-full p-6">
+                <p className="text-[11px] font-medium tracking-[0.14em] text-accent">{s.n}</p>
+                <h3 className="mt-3 text-[15px] font-semibold text-ink">{s.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">{s.body}</p>
+              </TiltCard>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Two-layer engine */}
+      <section className="border-y border-hairline bg-surface">
+        <div className="mx-auto max-w-5xl px-6 py-20">
+          <motion.div {...fade} className="mb-10 max-w-xl">
+            <h2 className="text-2xl font-semibold text-ink">A verdict, and the reasoning behind it</h2>
+            <p className="mt-2.5 text-[14px] leading-relaxed text-muted">
+              The two layers are kept deliberately separate so you can see when they disagree.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <motion.div {...fade}>
+              <TiltCard className="h-full p-6">
+                <IconChip className="text-xl text-accent" />
+                <h3 className="mt-3.5 text-[15px] font-semibold text-ink">Trained model — primary</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                  A Wav2Vec2-XLSR classifier fine-tuned on human recordings alongside output from
+                  ElevenLabs, Amazon Polly, Kokoro, Hume AI and Speechify. This is what decides real
+                  versus cloned.
+                </p>
+              </TiltCard>
+            </motion.div>
+
+            <motion.div {...fade} transition={{ ...fade.transition, delay: 0.09 }}>
+              <TiltCard className="h-full p-6">
+                <IconWaveform className="text-xl text-accent" />
+                <h3 className="mt-3.5 text-[15px] font-semibold text-ink">Signal forensics — secondary</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                  Pitch jitter, amplitude shimmer, harmonics-to-noise ratio, spectral flux and formant
+                  stability, computed from the waveform. Shown for explanation — never used to
+                  override the model.
+                </p>
+              </TiltCard>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Limitations — honest, no inflated claims */}
+      <section className="mx-auto max-w-5xl px-6 py-20">
+        <motion.div {...fade} className="max-w-2xl">
+          <h2 className="text-2xl font-semibold text-ink">What this prototype does not do</h2>
+          <div className="mt-6 divide-y divide-hairline border-y border-hairline">
+            {[
+              "It analyses uploaded or recorded clips, not a live telephony stream.",
+              "Accuracy is bounded by the pretrained checkpoint and has not been benchmarked against an independent labelled set here.",
+              "There are no accounts — analysis history is shared by anyone using this instance.",
+              "Inference runs on CPU at roughly two to six seconds per clip.",
+            ].map((line) => (
+              <p key={line} className="py-3.5 text-[13px] leading-relaxed text-muted">
+                {line}
+              </p>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t border-hairline bg-surface">
+        <div className="mx-auto max-w-5xl px-6 py-16 text-center">
+          <motion.div {...fade}>
+            <IconMic className="mx-auto text-2xl text-accent" />
+            <h2 className="mt-4 text-2xl font-semibold text-ink">Test it with your own audio</h2>
+            <p className="mx-auto mt-2.5 max-w-md text-[14px] leading-relaxed text-muted">
+              Bring a genuine recording and a cloned one, and compare how they score.
+            </p>
+            <Link
+              to="/analyze"
+              className="press mt-7 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-medium text-[var(--c-accent-ink)] transition hover:brightness-110"
+            >
+              Open the analyzer
+              <IconChevronRight className="text-sm" />
+            </Link>
+          </motion.div>
         </div>
       </section>
     </div>

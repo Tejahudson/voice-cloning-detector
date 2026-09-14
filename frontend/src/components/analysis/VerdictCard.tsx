@@ -1,4 +1,4 @@
-import { ShieldAlert, ShieldCheck } from "lucide-react"
+import { IconShieldAlert, IconShieldCheck } from "@/components/icons"
 import { cn } from "@/lib/utils"
 
 export function VerdictCard({
@@ -10,28 +10,22 @@ export function VerdictCard({
   confidence: number
   className?: string
 }) {
-  const isCloned = verdict === "cloned"
+  const cloned = verdict === "cloned"
+  const tone = cloned ? "var(--c-cloned)" : "var(--c-authentic)"
+
   return (
     <div
-      className={cn(
-        "flex items-center gap-4 rounded-2xl border px-5 py-4",
-        isCloned ? "border-rose-500/30 bg-rose-500/10" : "border-emerald-500/30 bg-emerald-500/10",
-        className
-      )}
+      className={cn("flex items-center gap-3.5 rounded-md border px-4 py-3.5", className)}
+      style={{ borderColor: tone, backgroundColor: `color-mix(in srgb, ${tone} 8%, transparent)` }}
     >
-      <div
-        className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-          isCloned ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400"
-        )}
-      >
-        {isCloned ? <ShieldAlert className="h-5.5 w-5.5" /> : <ShieldCheck className="h-5.5 w-5.5" />}
-      </div>
+      <span className="text-xl" style={{ color: tone }}>
+        {cloned ? <IconShieldAlert /> : <IconShieldCheck />}
+      </span>
       <div>
-        <p className={cn("font-semibold", isCloned ? "text-rose-300" : "text-emerald-300")}>
-          {isCloned ? "Likely AI-Cloned Voice" : "Likely Authentic Voice"}
+        <p className="text-[14px] font-semibold" style={{ color: tone }}>
+          {cloned ? "Likely AI-cloned voice" : "Likely authentic voice"}
         </p>
-        <p className="text-xs text-gray-400">{confidence.toFixed(0)}% confidence in this verdict</p>
+        <p className="text-[12px] text-muted">{confidence.toFixed(0)}% confidence in this verdict</p>
       </div>
     </div>
   )

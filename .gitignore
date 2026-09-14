@@ -3,9 +3,17 @@ backend/venv/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.db
+# DB snapshots from the pre-auth-removal schema — these contain real email
+# addresses and bcrypt password hashes, so they must never be published.
+backend/*.db.backup-*
 backend/uvicorn.log
 backend/.test_token
 backend/*.wav
+
+# Local design-brief working notes
+repos.docx
+do not include this.docx
+~$*.docx
 
 # Frontend
 frontend/node_modules/

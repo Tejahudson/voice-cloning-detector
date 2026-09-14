@@ -1,51 +1,52 @@
 import { useCallback, useState } from "react"
-import { Inbox, Mic, UploadCloud } from "lucide-react"
+import { IconInbox, IconMic, IconRoute, IconUpload } from "@/components/icons"
 import { UploadDropzone } from "@/components/upload/UploadDropzone"
 import { MicRecorder } from "@/components/upload/MicRecorder"
-import { cn } from "@/lib/utils"
 import { ClipListItem } from "@/components/analysis/ClipListItem"
 import { AnalysisPanel } from "@/components/analysis/AnalysisPanel"
+import { AnalystPanel } from "@/components/analysis/AnalystPanel"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api, ApiError, analysisSocketUrl } from "@/lib/api"
 import { openAnalysisSocket } from "@/lib/ws"
-import { useAuthStore } from "@/store/auth"
+import { startTour } from "@/lib/tour"
 import type { ClipState } from "@/types/clip"
 
 let idCounter = 0
 
 export default function Analyze() {
-  const token = useAuthStore((s) => s.token)
   const [clips, setClips] = useState<ClipState[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [source, setSource] = useState<"upload" | "mic">("upload")
 
-  const updateClip = useCallback((localId: string, patch: Partial<ClipState> | ((c: ClipState) => Partial<ClipState>)) => {
-    setClips((prev) =>
-      prev.map((c) => (c.localId === localId ? { ...c, ...(typeof patch === "function" ? patch(c) : patch) } : c))
-    )
-  }, [])
+  const updateClip = useCallback(
+    (localId: string, patch: Partial<ClipState> | ((c: ClipState) => Partial<ClipState>)) => {
+      setClips((prev) =>
+        prev.map((c) =>
+          c.localId === localId ? { ...c, ...(typeof patch === "function" ? patch(c) : patch) } : c
+        )
+      )
+    },
+    []
+  )
 
   const analyzeClip = useCallback(
     async (localId: string, file: File) => {
-      if (!token) return
       try {
-        const { analysis_id } = await api.uploadForAnalysis(file, token)
+        const { analysis_id } = await api.uploadForAnalysis(file)
         updateClip(localId, { status: "analyzing", analysisId: analysis_id })
 
-        openAnalysisSocket(analysisSocketUrl(analysis_id, token), {
+        openAnalysisSocket(analysisSocketUrl(analysis_id), {
           onMessage: (msg) => {
-            if (msg.type === "start") {
-              updateClip(localId, { start: msg })
-            } else if (msg.type === "chunk") {
-              updateClip(localId, (c) => ({ chunks: [...c.chunks, msg] }))
-            } else if (msg.type === "model_start") {
-              updateClip(localId, { status: "modeling" })
-            } else if (msg.type === "complete") {
-              updateClip(localId, { status: "done", result: msg.result })
-            } else if (msg.type === "error") {
+            if (msg.type === "start") updateClip(localId, { start: msg })
+            else if (msg.type === "chunk") updateClip(localId, (c) => ({ chunks: [...c.chunks, msg] }))
+            else if (msg.type === "model_start") updateClip(localId, { status: "modeling" })
+            else if (msg.type === "complete") updateClip(localId, { status: "done", result: msg.result })
+            else if (msg.type === "error")
               updateClip(localId, { status: "error", errorMessage: msg.message })
-            }
           },
-          onError: () => updateClip(localId, { status: "error", errorMessage: "Connection lost during analysis." }),
+          onError: () =>
+            updateClip(localId, { status: "error", errorMessage: "Connection lost during analysis." }),
         })
       } catch (err) {
         updateClip(localId, {
@@ -54,21 +55,21 @@ export default function Analyze() {
         })
       }
     },
-    [token, updateClip]
+    [updateClip]
   )
 
   const handleFiles = useCallback(
     (files: File[]) => {
-      const newClips: ClipState[] = files.map((file) => ({
+      const created: ClipState[] = files.map((file) => ({
         localId: `clip-${idCounter++}`,
         file,
         objectUrl: URL.createObjectURL(file),
         status: "uploading",
         chunks: [],
       }))
-      setClips((prev) => [...newClips, ...prev])
-      setSelectedId(newClips[0].localId)
-      newClips.forEach((c) => analyzeClip(c.localId, c.file))
+      setClips((prev) => [...created, ...prev])
+      setSelectedId(created[0].localId)
+      created.forEach((c) => analyzeClip(c.localId, c.file))
     },
     [analyzeClip]
   )
@@ -76,51 +77,49 @@ export default function Analyze() {
   const selected = clips.find((c) => c.localId === selectedId) ?? clips[0]
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Analyze voice samples</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Upload your own real and cloned clips — each gets a live, explainable risk analysis.
-        </p>
+    <div className="mx-auto max-w-6xl px-6 py-9">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Analyse voice samples</h1>
+          <p className="mt-1 text-[13px] text-muted">
+            Upload recordings or capture one live. Each clip gets a verdict and the reasoning behind it.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={startTour}>
+          <IconRoute className="text-sm" />
+          Take the tour
+        </Button>
       </div>
 
-      <div className="mb-6">
-        <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/[0.02] p-1">
-          {(
-            [
-              { key: "upload", label: "Upload file", icon: UploadCloud },
-              { key: "mic", label: "Record from mic", icon: Mic },
-            ] as const
-          ).map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setSource(key)}
-              className={cn(
-                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition",
-                source === key ? "bg-white/10 text-white" : "text-gray-400 hover:text-white"
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {source === "upload" ? (
-          <UploadDropzone onFiles={handleFiles} />
-        ) : (
-          <MicRecorder onRecorded={(file) => handleFiles([file])} />
-        )}
+      <div className="mb-6" data-tour="source">
+        <Tabs defaultValue="upload">
+          <TabsList className="mb-3">
+            <TabsTrigger value="upload">
+              <IconUpload className="text-sm" />
+              Upload file
+            </TabsTrigger>
+            <TabsTrigger value="mic">
+              <IconMic className="text-sm" />
+              Record from mic
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="upload">
+            <UploadDropzone onFiles={handleFiles} />
+          </TabsContent>
+          <TabsContent value="mic">
+            <MicRecorder onRecorded={(file) => handleFiles([file])} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {clips.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/5 bg-white/[0.015] py-16 text-center text-gray-500">
-          <Inbox className="h-6 w-6" />
-          <p className="text-sm">No clips analyzed yet — upload one above to get started.</p>
-        </div>
+        <Card className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+          <IconInbox className="text-xl text-faint" />
+          <p className="text-[13px] text-muted">No clips analysed yet — add one above to begin.</p>
+        </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          <div className="space-y-2">
+        <div className="grid gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
+          <div className="space-y-2" data-tour="clips">
             {clips.map((clip) => (
               <ClipListItem
                 key={clip.localId}
@@ -130,7 +129,14 @@ export default function Analyze() {
               />
             ))}
           </div>
-          <div>{selected && <AnalysisPanel key={selected.localId} clip={selected} />}</div>
+
+          <div className="min-w-0 space-y-4">
+            {selected && <AnalysisPanel key={selected.localId} clip={selected} />}
+
+            <Card className="h-[380px] overflow-hidden p-0" data-tour="analyst">
+              <AnalystPanel key={selected?.localId ?? "none"} result={selected?.result} />
+            </Card>
+          </div>
         </div>
       )}
     </div>

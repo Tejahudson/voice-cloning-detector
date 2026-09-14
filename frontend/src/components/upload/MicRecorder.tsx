@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Loader2, Mic, Square } from "lucide-react"
+import { IconMic, IconSpinner, IconStop } from "@/components/icons"
 import { blobToWavFile } from "@/lib/audio"
 import { cn } from "@/lib/utils"
 
@@ -38,13 +38,11 @@ export function MicRecorder({ onRecorded }: { onRecorded: (file: File) => void }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      // Live input level meter, so it's obvious the mic is actually picking up audio.
       const ctx = new AudioContext()
       audioCtxRef.current = ctx
-      const source = ctx.createMediaStreamSource(stream)
       const analyser = ctx.createAnalyser()
       analyser.fftSize = 512
-      source.connect(analyser)
+      ctx.createMediaStreamSource(stream).connect(analyser)
       const data = new Uint8Array(analyser.frequencyBinCount)
 
       const tick = () => {
@@ -66,8 +64,7 @@ export function MicRecorder({ onRecorded }: { onRecorded: (file: File) => void }
         try {
           const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" })
           const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19)
-          const file = await blobToWavFile(blob, `mic-recording-${stamp}.wav`)
-          onRecorded(file)
+          onRecorded(await blobToWavFile(blob, `mic-recording-${stamp}.wav`))
         } catch (err) {
           setError(err instanceof Error ? err.message : "Could not process the recording.")
         } finally {
@@ -93,64 +90,66 @@ export function MicRecorder({ onRecorded }: { onRecorded: (file: File) => void }
     }
   }
 
-  function stopRecording() {
-    recorderRef.current?.stop()
-  }
+  const bars = 5
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-hairline bg-canvas px-6 py-12 text-center">
       <button
-        onClick={state === "recording" ? stopRecording : startRecording}
+        onClick={state === "recording" ? () => recorderRef.current?.stop() : startRecording}
         disabled={state === "processing"}
         className={cn(
-          "relative flex h-14 w-14 items-center justify-center rounded-full transition disabled:opacity-60",
+          "press relative inline-flex h-14 w-14 items-center justify-center rounded-full border transition-colors",
           state === "recording"
-            ? "bg-rose-500 text-white"
-            : "bg-gradient-to-br from-cyan-500 to-violet-500 text-white hover:brightness-110"
+            ? "border-cloned text-cloned"
+            : "border-accent bg-accent text-[var(--c-accent-ink)] hover:brightness-110"
         )}
+        aria-label={state === "recording" ? "Stop recording" : "Start recording"}
       >
         {state === "recording" && (
           <span
-            className="absolute inset-0 rounded-full bg-rose-500/40"
-            style={{ transform: `scale(${1 + level * 0.9})`, transition: "transform 80ms linear" }}
+            className="absolute inset-0 rounded-full border border-cloned"
+            style={{ transform: `scale(${1 + level * 0.5})`, opacity: 0.4, transition: "transform 80ms linear" }}
           />
         )}
-        <span className="relative z-10">
-          {state === "processing" ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : state === "recording" ? (
-            <Square className="h-5 w-5" fill="currentColor" />
-          ) : (
-            <Mic className="h-5 w-5" />
-          )}
+        <span className="relative text-lg">
+          {state === "processing" ? <IconSpinner /> : state === "recording" ? <IconStop /> : <IconMic />}
         </span>
       </button>
 
       <div>
-        <p className="font-medium text-gray-200">
+        <p className="text-[14px] font-medium text-ink">
           {state === "recording"
-            ? `Recording… ${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, "0")}`
+            ? `Recording · ${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, "0")}`
             : state === "processing"
-              ? "Processing recording…"
-              : "Record live from your microphone"}
+              ? "Processing recording"
+              : "Record from your microphone"}
         </p>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-[12px] text-faint">
           {state === "recording"
-            ? "Click the square to stop and analyze."
-            : "Play a suspected cloned voice out loud, or speak yourself — aim for 3+ seconds."}
+            ? "Press stop when you're done and it will analyse the take."
+            : "Speak yourself, or play a suspected cloned voice aloud. Aim for 3 seconds or more."}
         </p>
       </div>
 
       {state === "recording" && (
-        <div className="h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
-            style={{ width: `${Math.min(100, level * 140)}%`, transition: "width 80ms linear" }}
-          />
+        <div className="flex h-6 items-end gap-1">
+          {Array.from({ length: bars }).map((_, i) => {
+            const spread = 1 - Math.abs(i - (bars - 1) / 2) / bars
+            return (
+              <span
+                key={i}
+                className="w-1 rounded-full bg-accent"
+                style={{
+                  height: `${Math.max(4, level * 24 * spread + 4)}px`,
+                  transition: "height 80ms linear",
+                }}
+              />
+            )
+          })}
         </div>
       )}
 
-      {error && <p className="max-w-xs text-xs text-rose-400">{error}</p>}
+      {error && <p className="max-w-xs text-[12px] text-cloned">{error}</p>}
     </div>
   )
 }
