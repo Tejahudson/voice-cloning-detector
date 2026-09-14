@@ -29,10 +29,15 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
+# A wildcard origin and credentialed requests are mutually exclusive per the
+# CORS spec. This API uses no cookies or auth headers, so dropping credentials
+# is what makes the wildcard usable for split frontend/backend deployments.
+_wildcard = "*" in settings.cors_origins
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_credentials=not _wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )

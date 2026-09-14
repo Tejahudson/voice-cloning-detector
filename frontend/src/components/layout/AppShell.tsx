@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { IconHistory, IconWaveform } from "@/components/icons"
+import { BackendLink } from "@/components/layout/BackendLink"
 import { Logo } from "@/components/layout/Logo"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { cn } from "@/lib/utils"
@@ -40,9 +41,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-auto flex items-center gap-2 border-t border-hairline pt-4">
-          <ThemeToggle />
-          <span className="text-[11px] text-faint">Appearance</span>
+        <div className="mt-auto space-y-2 border-t border-hairline pt-4">
+          <BackendLink />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <span className="text-[11px] text-faint">Appearance</span>
+          </div>
         </div>
       </aside>
 

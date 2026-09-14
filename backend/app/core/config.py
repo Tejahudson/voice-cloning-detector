@@ -4,6 +4,12 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     app_name: str = "VoiceGuard-AI"
     database_url: str = "sqlite:///./voiceguard.db"
+    # Comma-separated in the environment, e.g.
+    #   CORS_ORIGINS=https://voiceguard.vercel.app
+    # Use "*" when the frontend is hosted separately and its origin isn't fixed
+    # (a Vercel preview URL, say). Safe here only because the API carries no
+    # cookies or credentials — see main.py, which disables allow_credentials
+    # whenever the origin list is a wildcard.
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     # Set in the container to the built frontend. When present the API also
