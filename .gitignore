@@ -6,7 +6,7 @@ backend/*.db
 # DB snapshots from the pre-auth-removal schema — these contain real email
 # addresses and bcrypt password hashes, so they must never be published.
 backend/*.db.backup-*
-backend/uvicorn.log
+backend/*.log
 backend/.test_token
 backend/*.wav
 

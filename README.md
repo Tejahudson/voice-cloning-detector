@@ -119,6 +119,25 @@ VITE_API_BASE_URL=https://your-backend.example.com npm run build
 
 Leave it unset when a reverse proxy serves both from the same origin.
 
+## Deployment
+
+The app ships as a **single container** — FastAPI serves the API, the WebSocket
+and the built React frontend from one origin, so there's no CORS setup and one
+URL to share.
+
+```bash
+docker build -t voiceguard-ai .
+docker run -p 7860:7860 voiceguard-ai      # then open http://localhost:7860
+```
+
+Sizing matters: the detector needs about **2.3 GB resident**, so hosts under
+~4 GB RAM will fail and serverless platforms can't hold the WebSocket open. The
+model is baked into the image (≈4–5 GB) so cold starts don't stall on a 1.2 GB
+download.
+
+See [`deploy/DEPLOY.md`](deploy/DEPLOY.md) for Hugging Face Spaces instructions,
+configuration variables, and operational notes.
+
 ## Interface
 
 The UI is a corporate-minimal design system: Helvetica throughout, a warm off-white light theme and a neutral charcoal dark theme (toggle in the header, remembered per browser and defaulting to your OS preference). Depth comes from hairline borders, tonal surface steps and real CSS 3D perspective — no shadows, glass or gradients.

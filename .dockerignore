@@ -1,0 +1,25 @@
+# Build context hygiene — keeps the image small and secrets out of it.
+
+**/node_modules
+**/dist
+**/venv
+**/__pycache__
+**/*.pyc
+
+# Local databases and their snapshots (the backups hold real emails and
+# password hashes from the pre-auth-removal schema).
+backend/*.db
+backend/*.db.backup-*
+
+# Logs and local test artifacts
+backend/uvicorn.log
+backend/*.wav
+frontend/vite.log
+
+.git
+.gitignore
+docs
+*.docx
+~$*.docx
+*.pdf
+*.mp3

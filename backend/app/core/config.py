@@ -6,6 +6,11 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./voiceguard.db"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
+    # Set in the container to the built frontend. When present the API also
+    # serves the SPA, so everything runs on a single origin and CORS and
+    # cross-origin WebSocket setup stop being a concern.
+    static_dir: str = ""
+
     # Real-time analysis
     chunk_seconds: float = 1.0
     sample_rate: int = 16000
