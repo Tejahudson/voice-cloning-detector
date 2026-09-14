@@ -31,15 +31,38 @@ Go to https://huggingface.co/new-space and choose:
 
 ### 2. Push the code
 
-```bash
-# Install the CLI and sign in (opens a browser for a token)
-pip install -U "huggingface_hub[cli]"
-hf auth login
+The `hf` CLI is already installed inside the backend venv (it comes with
+`transformers`), but it is **not on your PATH**, so a bare `hf auth login` will
+report that the command isn't recognised. Call it by path from the repo root:
 
-# Point a remote at your new Space and push this repo to it
+```bash
+# Sign in — prompts for a token from huggingface.co/settings/tokens
+backend/venv/Scripts/hf.exe auth login       # Windows
+# backend/venv/bin/hf auth login             # macOS / Linux
+
+# Confirm it worked
+backend/venv/Scripts/hf.exe auth whoami
+```
+
+Create the token at https://huggingface.co/settings/tokens with the **Write**
+role — read-only tokens can't push a Space.
+
+If you'd rather type plain `hf` from anywhere, install it globally instead:
+
+```bash
+pip install -U "huggingface_hub[cli]"
+```
+
+Then push this repo to the Space:
+
+```bash
 git remote add space https://huggingface.co/spaces/<your-username>/<space-name>
 git push space main
 ```
+
+Logging in above installs a git credential helper, so the push won't ask for a
+password. If it does, use your Hugging Face username and paste the **write**
+token as the password.
 
 ### 3. Give the Space its README
 
