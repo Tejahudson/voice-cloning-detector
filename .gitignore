@@ -1,0 +1,20 @@
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.db
+backend/uvicorn.log
+backend/.test_token
+backend/*.wav
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/vite.log
+
+# Editors / OS
+.DS_Store
+*.pyc
+.env
+.env.local

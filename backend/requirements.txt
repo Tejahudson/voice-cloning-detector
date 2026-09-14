@@ -1,0 +1,19 @@
+# NOTE: install CPU-only PyTorch first, it is not on PyPI's default index:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+transformers>=4.45
+accelerate>=1.0
+
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.19
+librosa>=0.10.2
+numpy>=2.0
+scipy>=1.13
+soundfile>=0.12.1
+sqlmodel>=0.0.22
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt==4.0.1
+pydantic-settings>=2.6.1
+email-validator>=2.2.0
+websockets>=13.1

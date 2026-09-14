@@ -1,0 +1,57 @@
+graph TD
+    subgraph Client["Browser (React + Magic UI)"]
+        A[Login / Auth Screen] --> B[Upload & Analyze Page]
+        B --> C[Multi-file Drag & Drop Uploader]
+        B --> C2[Mic Recorder: getUserMedia + MediaRecorder]
+        C2 -- decode & re-encode to 16kHz mono WAV --> C
+        C --> D[Audio Player + Waveform View]
+        D --> E[Spectrogram / Pitch Contour / Stat Tiles]
+        E --> F[Risk Score Gauge + Verdict Card]
+        F --> G[History Dashboard]
+    end
+
+    subgraph Gateway["API Layer (FastAPI)"]
+        H[Auth Router: /login /signup]
+        I[Analyze Router: /analyze/upload]
+        J["WebSocket: /ws/analyze/:id (progress)"]
+        K[History Router: /history]
+    end
+
+    subgraph Engine["Detection Engine"]
+        L[Audio Ingestion & Chunking]
+        W["PRIMARY: Wav2Vec2 deepfake classifier (windowed, averaged)"]
+        M["SECONDARY: Feature Extraction - Pitch/F0, Jitter, Shimmer, HNR, Spectral Flatness/Flux, MFCC delta, Formant BW"]
+        N[Heuristic Risk Scoring - explainability only]
+        O[Verdict + Explainability Breakdown]
+    end
+
+    subgraph Data["Persistence"]
+        P[(SQLite: Users)]
+        Q[(SQLite: Analysis History)]
+        R[Ephemeral Audio Buffer - not persisted]
+    end
+
+    subgraph Security["Security Layer"]
+        S[JWT Issuance & Verification]
+        T[Password Hashing - bcrypt]
+        U[Rate Limiter]
+        V[HTTPS/WSS Transport]
+    end
+
+    C -- multipart upload --> I
+    I --> L
+    L --> W --> O
+    L --> M --> N --> O
+    N --> J
+    J -- streamed chunk scores --> E
+    O --> F
+    I --> Q
+    A --> H
+    H --> P
+    H --> S
+    S --> T
+    I --> U
+    I --> R
+    V -.enforces.-> I
+    V -.enforces.-> J
+    G --> K --> Q
