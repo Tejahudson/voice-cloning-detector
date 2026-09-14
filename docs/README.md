@@ -33,13 +33,13 @@ Open `http://localhost:5173`. The dev server proxies `/api` and `/ws` to the bac
 
 ### Try it
 
-1. Sign up with any email/password (demo-only auth, stored locally in SQLite).
+1. Open the app and click **Open analyzer** — there are no accounts or sign-in.
 2. On the **Analyze** page, either **upload files** or **record from your mic**:
    - *Upload file* — drop in a real recording and, separately, an AI-generated/cloned clip (from any TTS or voice-cloning tool). WAV is the most reliable format; MP3/M4A/FLAC/OGG also work if the host has an audio codec backend available.
    - *Record from mic* — click record, speak (or play a suspected cloned voice out loud), click stop, and it analyzes that take. The browser decodes and re-encodes the recording to 16 kHz mono WAV client-side, so no server-side ffmpeg is needed. Aim for 3+ seconds.
 3. Watch the waveform, spectrogram, pitch contour and the live streaming risk score (updates roughly once a second per chunk, mirroring the PS26104 brief's real-time cadence).
 4. Compare verdicts and risk scores across several real vs. cloned clips — this is the main way to sanity-check the heuristic on your own material.
-5. Check **History** for a running log of everything you've analyzed on this account.
+5. Check **History** for a running log of every analysis on this instance (shared, since there are no accounts).
 
 ## How detection works
 
@@ -73,24 +73,25 @@ The risk score, verdict and confidence shown in the UI all come from this model.
 
 ## Architecture
 
-See `architecture.mmd` (Mermaid) for the full diagram — client, API layer, detection engine, persistence, and security layer.
+See `architecture.mmd` (Mermaid) for the full diagram — client, API layer, detection engine, persistence, and operational guards.
 
-## Security & privacy posture (demo-grade)
+## Privacy & operational posture
 
-- JWT-based auth gates every `/analyze` and `/history` route.
-- Passwords hashed with bcrypt (`passlib`).
-- Uploaded audio bytes live only in an in-memory holding area (`app/services/pending_store.py`) between upload and the WebSocket analysis pass, then are discarded — never written to disk, never persisted to the database. Only the verdict summary (filename, score, verdict, confidence, top 4 feature contributions) is saved to history.
-- A simple in-memory sliding-window rate limiter caps `/analyze/upload` per user.
+**There is no authentication.** Accounts, JWTs and password hashing were removed: the analyzer is open, and analysis history is a single shared list rather than per-user. Anyone who can reach the server can use it, so put it behind a reverse proxy or a private network before exposing it beyond localhost.
+
+What the system still does:
+
+- Uploaded audio bytes live only in an in-memory holding area (`app/services/pending_store.py`) between upload and the WebSocket analysis pass, then are discarded — never written to disk, never persisted to the database. Only the verdict summary (filename, score, verdict, confidence, top 4 feature contributions) reaches the history table.
+- A sliding-window rate limiter caps `/analyze/upload`, keyed by client IP.
+- Uploads are validated against a file-type allowlist and a 25 MB ceiling.
 - Intended for HTTPS/WSS in any real deployment; the dev setup runs over plain HTTP/WS on localhost only.
-
-This is **not** a production identity or key-management system — it exists to demonstrate the security posture described in the SIH submission (privacy-preserving inference, gated access) at prototype scope.
 
 ## Project structure
 
 ```
 voice_cloning_detector/
-  backend/    FastAPI app: auth, upload, streaming analysis, history
-  frontend/   React + Vite + TypeScript + Tailwind + Magic UI-style components
+  backend/    FastAPI app: upload, streaming analysis, history
+  frontend/   React + Vite + TypeScript + Tailwind + Radix primitives
   docs/       This file + architecture.mmd
   SIH26104_Victrix_VoiceGuardAI.pdf   original idea submission
 ```

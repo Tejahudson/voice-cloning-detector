@@ -1,20 +1,20 @@
 graph TD
-    subgraph Client["Browser (React + Magic UI)"]
-        A[Login / Auth Screen] --> B[Upload & Analyze Page]
-        B --> C[Multi-file Drag & Drop Uploader]
+    subgraph Client["Browser (React + Radix + Tailwind)"]
+        B[Analyze Page] --> C[Multi-file Drag & Drop Uploader]
         B --> C2[Mic Recorder: getUserMedia + MediaRecorder]
         C2 -- decode & re-encode to 16kHz mono WAV --> C
         C --> D[Audio Player + Waveform View]
         D --> E[Spectrogram / Pitch Contour / Stat Tiles]
         E --> F[Risk Score Gauge + Verdict Card]
+        F --> X[Ask-the-Analyst Panel]
         F --> G[History Dashboard]
+        T1[Theme Store: light / dark] -.tints.-> E
     end
 
-    subgraph Gateway["API Layer (FastAPI)"]
-        H[Auth Router: /login /signup]
-        I[Analyze Router: /analyze/upload]
-        J["WebSocket: /ws/analyze/:id (progress)"]
-        K[History Router: /history]
+    subgraph Gateway["API Layer (FastAPI) - no authentication"]
+        I[Analyze Router: POST /analyze/upload]
+        J["WebSocket: /ws/analyze/:id (streamed progress)"]
+        K[History Router: GET / DELETE /history]
     end
 
     subgraph Engine["Detection Engine"]
@@ -26,32 +26,28 @@ graph TD
     end
 
     subgraph Data["Persistence"]
-        P[(SQLite: Users)]
-        Q[(SQLite: Analysis History)]
-        R[Ephemeral Audio Buffer - not persisted]
+        Q[(SQLite: Analysis History - unscoped, shared)]
+        R[Ephemeral Audio Buffer - in memory, discarded after analysis]
     end
 
-    subgraph Security["Security Layer"]
-        S[JWT Issuance & Verification]
-        T[Password Hashing - bcrypt]
-        U[Rate Limiter]
-        V[HTTPS/WSS Transport]
+    subgraph Guards["Operational Guards"]
+        U[Rate Limiter - keyed by client IP]
+        V[Upload Validation - type allowlist, 25MB cap]
+        P[HTTPS/WSS Transport]
     end
 
     C -- multipart upload --> I
-    I --> L
+    I --> V --> L
     L --> W --> O
     L --> M --> N --> O
     N --> J
     J -- streamed chunk scores --> E
     O --> F
-    I --> Q
-    A --> H
-    H --> P
-    H --> S
-    S --> T
+    O -- verdict summary only --> Q
     I --> U
     I --> R
-    V -.enforces.-> I
-    V -.enforces.-> J
+    R -. never written to disk .-> Q
+    X -- reads completed result --> O
     G --> K --> Q
+    P -.enforces.-> I
+    P -.enforces.-> J

@@ -16,28 +16,28 @@ Built for **Smart India Hackathon 2026 · Problem Statement SIH26104** — *AI-P
 - **Visual voice forensics** — waveform, mel spectrogram, and pitch (F0) contour rendered from the actual audio.
 - **Explainable breakdown** — jitter, shimmer, harmonics-to-noise ratio, spectral flux, formant stability and more, shown as supporting signal-level context.
 - **Privacy-preserving** — uploaded audio is analyzed in memory and discarded; only the verdict summary is stored.
-- **Gated dashboard** — JWT auth, bcrypt password hashing, rate-limited analysis endpoint.
+- **No sign-up** — open the analyzer and start; there are no accounts to create. Abuse protection is a per-IP rate limit and an upload type/size allowlist.
 
 ## Architecture
 
 ```mermaid
 graph TD
-    subgraph Client["Browser (React + Magic UI)"]
-        A[Login / Auth Screen] --> B[Upload & Analyze Page]
-        B --> C[Multi-file Drag & Drop Uploader]
+    subgraph Client["Browser (React + Radix + Tailwind)"]
+        B[Analyze Page] --> C[Multi-file Drag & Drop Uploader]
         B --> C2[Mic Recorder: getUserMedia + MediaRecorder]
         C2 -- decode & re-encode to 16kHz mono WAV --> C
         C --> D[Audio Player + Waveform View]
         D --> E[Spectrogram / Pitch Contour / Stat Tiles]
         E --> F[Risk Score Gauge + Verdict Card]
+        F --> X[Ask-the-Analyst Panel]
         F --> G[History Dashboard]
+        T1[Theme Store: light / dark] -.tints.-> E
     end
 
-    subgraph Gateway["API Layer (FastAPI)"]
-        H[Auth Router: /login /signup]
-        I[Analyze Router: /analyze/upload]
-        J["WebSocket: /ws/analyze/:id (progress)"]
-        K[History Router: /history]
+    subgraph Gateway["API Layer (FastAPI) - no authentication"]
+        I[Analyze Router: POST /analyze/upload]
+        J["WebSocket: /ws/analyze/:id (streamed progress)"]
+        K[History Router: GET / DELETE /history]
     end
 
     subgraph Engine["Detection Engine"]
@@ -49,35 +49,31 @@ graph TD
     end
 
     subgraph Data["Persistence"]
-        P[(SQLite: Users)]
-        Q[(SQLite: Analysis History)]
-        R[Ephemeral Audio Buffer - not persisted]
+        Q[(SQLite: Analysis History - unscoped, shared)]
+        R[Ephemeral Audio Buffer - in memory, discarded after analysis]
     end
 
-    subgraph Security["Security Layer"]
-        S[JWT Issuance & Verification]
-        T[Password Hashing - bcrypt]
-        U[Rate Limiter]
-        V[HTTPS/WSS Transport]
+    subgraph Guards["Operational Guards"]
+        U[Rate Limiter - keyed by client IP]
+        V[Upload Validation - type allowlist, 25MB cap]
+        P[HTTPS/WSS Transport]
     end
 
     C -- multipart upload --> I
-    I --> L
+    I --> V --> L
     L --> W --> O
     L --> M --> N --> O
     N --> J
     J -- streamed chunk scores --> E
     O --> F
-    I --> Q
-    A --> H
-    H --> P
-    H --> S
-    S --> T
+    O -- verdict summary only --> Q
     I --> U
     I --> R
-    V -.enforces.-> I
-    V -.enforces.-> J
+    R -. never written to disk .-> Q
+    X -- reads completed result --> O
     G --> K --> Q
+    P -.enforces.-> I
+    P -.enforces.-> J
 ```
 
 ## Tech stack
@@ -87,7 +83,7 @@ graph TD
 | Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, Radix primitives, Framer Motion, Recharts, Zustand, driver.js, assistant-ui |
 | Backend | Python 3.13, FastAPI, Uvicorn, WebSockets, SQLModel + SQLite |
 | Audio / ML | PyTorch (CPU), Transformers, librosa, NumPy, SciPy, soundfile |
-| Security | JWT (python-jose), bcrypt (passlib), in-memory rate limiting |
+| Guards | In-memory per-IP rate limiting, upload type/size validation |
 
 ## Quick start
 
@@ -148,7 +144,7 @@ This is a **hackathon prototype**, not a production system:
 
 - Detection accuracy is bounded by the pretrained checkpoint; it has not been benchmarked against an independent labeled set here.
 - Analysis runs on uploaded/recorded clips, not on a live telephony stream.
-- Auth is demo-grade — real accounts, hashing and JWTs, but no email verification, password reset, or key management.
+- There is no authentication. Anyone who can reach the server can analyse audio, and the history list is shared by all users of an instance — put it behind a reverse proxy or a private network before exposing it publicly.
 - Inference is CPU-only at ~2–6s per clip.
 
 ## Documentation
